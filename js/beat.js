@@ -79,9 +79,6 @@ function autoStep() {
   if (r < 0.5) {
     if (S.auto.fx) S.fx[S.auto.fx].on = false;
     const pool = FX.map(f => f.id).filter(id => id !== S.auto.fx && id !== 'flash' && id !== 'invert'); const id = pick(pool); S.fx[id].on = true; S.auto.fx = id;
-  } else if (S.source === 'gen') {
-    if (r < 0.85) { let i; do { i = Math.floor(rnd(0, S.gens.length)); } while (i === S.genSlot && S.gens.length > 1); setGenSlot(i, true); }
-    else dice(true);
-  }
+  } else if (S.media.length > 1) stepFocus(1);
   syncPads();
 }

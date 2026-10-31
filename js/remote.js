@@ -68,7 +68,6 @@ function rcOnData(d, m) {
     if (m.ar && (!S.screenARset || R.conns.size === 1)) { S.screenAR = m.ar; S.screenARset = true; if (S.aspect === 'screen') alloc(); }
     rcSend(d, { type: 'state', json: JSON.stringify(snapshot()) }); rcSendClock(d);
     S.media.forEach(it => { if (!d.have.has(it.id)) d.queue.push({ kind: 'media', id: it.id }); });
-    S.customStickers.forEach(it => { if (!d.have.has(it.id)) d.queue.push({ kind: 'sticker', id: it.id }); });
     rcPump(d); rcList(); toast(d.name + ' đã kết nối.');
   } else if (m.type === 'status') {
     d.fps = m.fps; d.ar = m.ar; d.info = m.info || '';
@@ -84,7 +83,7 @@ async function rcPump(d) {
   try {
     while (d.queue.length && d.open) {
       const it = d.queue.shift();
-      const src = it.kind === 'media' ? S.media.find(x => x.id === it.id) : S.customStickers.find(x => x.id === it.id);
+      const src = S.media.find(x => x.id === it.id);
       if (!src || !src.blob || d.have.has(it.id)) continue;
       const buf = await src.blob.arrayBuffer(), n = Math.ceil(buf.byteLength / CHUNK) || 1;
       rcSend(d, { type: 'bs', id: it.id, kind: it.kind, name: src.name || 'file', mime: src.blob.type || '', size: buf.byteLength, n });
@@ -121,14 +120,13 @@ function rcList() {
   }).join('');
 }
 function snapshot() {
-  const m = S.source === 'media' ? S.media[S.mediaSel] : null;
   return {
     bpm: S.bpm, div: S.div, aspect: S.aspect, custom: S.custom, res: S.res, screenAR: S.screenAR, outFit: S.outFit, mediaFit: S.mediaFit,
-    black: S.black, guides: S.guides, limit: S.limit, dim: S.dim, freeze: S.freeze, drop: S.drop, lat: S.lat, xfade: S.xfade,
+    black: S.black, guides: S.guides, limit: S.limit, dim: S.dim, freeze: S.freeze, drop: S.drop, lat: S.lat,
     fx: Object.fromEntries(Object.entries(S.fx).map(([k, f]) => [k, { on: f.on, p: f.p }])),
-    gen: S.gen, source: m ? 'media' : 'gen', mediaId: m ? m.id : null,
+    deck: { a: S.deck.a, b: S.deck.b, x: Math.round(S.deck.x * 1000) / 1000, blend: S.deck.blend, cut: S.deck.cut }, xfAnim: S.xfAnim,
     mp: Object.fromEntries(S.media.map(x => [x.id, { speed: x.speed, reverse: x.reverse, trimA: x.trimA, trimB: x.trimB }])),
-    stickers: S.stickers, stickerFx: S.stickerFx, text: S.text
+    text: S.text
   };
 }
 
@@ -164,7 +162,7 @@ function dOpenConn() {
   const to = setTimeout(() => { if (D.conn === c && !D.open) { try { c.close(); } catch (e) { /* ignore */ } dStat('Kết nối chậm, đang thử lại...'); dRetry(false); } }, 10000);
   c.on('open', () => {
     if (D.conn !== c) return; clearTimeout(to); D.open = true; D.lastMsg = performance.now();
-    c.send({ type: 'hello', have: S.media.map(m => m.id).concat(S.customStickers.map(s => s.id)), ar: myAR(), name: devName() });
+    c.send({ type: 'hello', have: S.media.map(m => m.id), ar: myAR(), name: devName() });
     dStat('Đã kết nối với mã ' + D.code + '.'); dCard(false); dBar();
   });
   c.on('data', m => { if (D.conn === c) dOnData(m); });
@@ -195,8 +193,7 @@ async function dOnData(m) {
     case 'be': {
       const r = D.rx.get(m.id); D.rx.delete(m.id); if (!r || r.got !== r.meta.n) break;
       const file = new File(r.parts, r.meta.name, { type: r.meta.mime });
-      if (r.meta.kind === 'media') { await addMedia(file, { id: m.id }); if (D.pendingMedia === m.id) { selectMedia(S.media.findIndex(x => x.id === m.id)); D.pendingMedia = null; } }
-      else await addCustomSticker(file, { id: m.id });
+      if (r.meta.kind === 'media') await addMedia(file, { id: m.id });
       if (D.conn && D.open) D.conn.send({ type: 'got', id: m.id });
       dStat('Đã nhận "' + r.meta.name + '".');
       break;
@@ -205,14 +202,11 @@ async function dOnData(m) {
 }
 function applyState(st) {
   const frameBefore = [S.aspect, S.custom.join(':'), S.res, S.screenAR].join('|');
-  ['bpm', 'div', 'aspect', 'custom', 'res', 'screenAR', 'outFit', 'mediaFit', 'black', 'guides', 'limit', 'dim', 'freeze', 'drop', 'lat', 'xfade', 'gen', 'stickers', 'stickerFx', 'text'].forEach(k => { if (st[k] !== undefined) S[k] = st[k]; });
+  ['bpm', 'div', 'aspect', 'custom', 'res', 'screenAR', 'outFit', 'mediaFit', 'black', 'guides', 'limit', 'dim', 'freeze', 'drop', 'lat', 'text'].forEach(k => { if (st[k] !== undefined) S[k] = st[k]; });
   if (st.fx) Object.entries(st.fx).forEach(([k, f]) => { if (S.fx[k]) { S.fx[k].on = !!f.on; Object.assign(S.fx[k].p, f.p); } });
   if (st.mp) S.media.forEach(m => { if (st.mp[m.id]) Object.assign(m, st.mp[m.id]); });
-  if (st.source === 'media' && st.mediaId) {
-    const i = S.media.findIndex(m => m.id === st.mediaId);
-    if (i >= 0) { if (S.mediaSel !== i || S.source !== 'media') selectMedia(i); D.pendingMedia = null; }
-    else { D.pendingMedia = st.mediaId; if (S.source === 'media') selectMedia(-1); }
-  } else if (S.source === 'media') selectMedia(-1);
+  if (st.deck) Object.assign(S.deck, st.deck);
+  S.xfAnim = st.xfAnim || null;
   if ([S.aspect, S.custom.join(':'), S.res, S.screenAR].join('|') !== frameBefore) alloc();
   cv.className = S.outFit === 'cover' ? 'fit-cover' : S.outFit === 'stretch' ? 'fit-stretch' : '';
 }
@@ -228,7 +222,6 @@ function setupDisplay() {
   document.body.dataset.role = 'display';
   const disp = $('#disp'); disp.hidden = false; disp.insertBefore(cv, disp.firstChild);
   document.title = 'Màn chiếu · Lollipop VJ';
-  S.fx.zoom.on = true;
   const code = HASH_CODE || lsGet('plv-display-code') || ''; $('#dCode').value = code;
   $('#dGo').addEventListener('click', dConnect);
   $('#dCode').addEventListener('keydown', e => { if (e.key === 'Enter') dConnect(); });

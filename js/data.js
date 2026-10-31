@@ -1,36 +1,24 @@
 'use strict';
-/* Popping Lollipop VJ · data.js */
-/* ---------- constants ---------- */
+/* Popping Lollipop VJ · data.js: danh sách effect, chế độ trộn, tỉ lệ khung, mẫu chữ */
 const ASPECTS = { '16:9': [16, 9], '4:3': [4, 3], '16:10': [16, 10], '9:16': [9, 16], '1:1': [1, 1] };
 const DIVS = [[0.25, '1/4'], [0.5, '1/2'], [1, '1'], [2, '2'], [4, '4']];
-const SHAPES = [{ id: 'circle', name: 'Tròn' }, { id: 'square', name: 'Vuông' }, { id: 'sparkle', name: 'Sao Y2K' }, { id: 'heart', name: 'Tim' }, { id: 'bubble', name: 'Bong bóng' }, { id: 'ring', name: 'Vòng' },
-  { id: 'card', name: 'Lá bài' }, { id: 'clock', name: 'Đồng hồ' }, { id: 'rabbit', name: 'Thỏ' }, { id: 'key', name: 'Chìa khoá' }];
-const MOTIONS = [{ id: 'rotate', name: 'Xoay' }, { id: 'pulse', name: 'Nhấp nhô' }, { id: 'orbit', name: 'Quay quanh' }, { id: 'bounce', name: 'Nảy' }, { id: 'wave', name: 'Sóng' }, { id: 'spiral', name: 'Xoắn ốc' }];
-const MULTIS = [{ id: 'grid', name: 'Lưới' }, { id: 'circle', name: 'Vòng tròn' }, { id: 'tunnel', name: 'Đường hầm' }, { id: 'mirror', name: 'Gương' }];
-const CTLS = [{ id: '0.25', name: '1/4 nhịp' }, { id: '0.5', name: '1/2 nhịp' }, { id: '1', name: '1 nhịp' }, { id: '2', name: '2 nhịp' }, { id: '4', name: '4 nhịp' }, { id: 'free', name: 'Trôi tự do' }];
-const PALS = [
-  { name: 'Kẹo pastel', bg: ['#FFD1EA', '#D6C8FF'], c: ['#FF4FA3', '#FFD447', '#38D6EE', '#8A6BFF', '#B6F23A'] },
-  { name: 'Chrome bạc', bg: ['#E4E9F6', '#98A2C0'], c: ['#FFFFFF', '#C5CDE3', '#8892B0', '#F3F6FF', '#6F7AA0'] },
-  { name: 'Acid neon', bg: ['#1B1235', '#3A1D6B'], c: ['#B6F23A', '#FF3D9E', '#2DE6FF', '#FFE14D', '#A26BFF'] },
-  { name: 'Hồng nóng', bg: ['#FF9BD1', '#FF4FA3'], c: ['#FFFFFF', '#FFE3F1', '#8A0E52', '#FFD447', '#FFB6DD'] },
-  { name: 'Xanh nhựa', bg: ['#A8F0FF', '#4FB5FF'], c: ['#FFFFFF', '#0E5DD8', '#B6F23A', '#FF4FA3', '#E4FBFF'] },
-  { name: 'Hoàng hôn', bg: ['#FFE29A', '#FF7EB6'], c: ['#FF4F5E', '#FFFFFF', '#8A6BFF', '#FFB13D', '#FF4FA3'] },
-  { name: 'Đỏ Đen Trắng', bg: ['#0B0709', '#3A0610'], c: ['#E8173A', '#FFFFFF', '#B30D2B', '#F6EEE3', '#FF4A63'] },
-  { name: 'Nữ hoàng Trắng', bg: ['#FBF8F3', '#D8D2CB'], c: ['#141014', '#E8173A', '#FFFFFF', '#8E8780', '#2B2447'] },
-  { name: 'Hang thỏ', bg: ['#12081F', '#0B2A2A'], c: ['#9B5CFF', '#2EE6C5', '#FF4FA3', '#FFD447', '#FFFFFF'] },
-  { name: 'Tiệc trà', bg: ['#FBE7D9', '#E7D7F7'], c: ['#E07A9A', '#7FB7A5', '#F2C14E', '#8E6CCB', '#FFFFFF'] }
-];
-const STICKERS = [
-  { id: 'rabbit', name: 'Thỏ trắng' }, { id: 'clock', name: 'Đồng hồ' }, { id: 'cardh', name: 'Lá bài cơ' }, { id: 'cards', name: 'Lá bài bích' },
-  { id: 'teacup', name: 'Tách trà' }, { id: 'key', name: 'Chìa khoá' }, { id: 'crown', name: 'Vương miện' }, { id: 'drinkme', name: 'Drink Me' },
-  { id: 'sparkle', name: 'Sao lấp lánh' }, { id: 'heart', name: 'Tim' }, { id: 'smile', name: 'Mặt cười' }, { id: 'wow', name: 'WOW' },
-  { id: 'cd', name: 'Đĩa CD' }, { id: 'lolli', name: 'Kẹo mút' }, { id: 'bubble', name: 'Bong bóng' }];
-const SMOTIONS = [{ id: 'bounce', name: 'Nảy' }, { id: 'shake', name: 'Lắc' }, { id: 'spin', name: 'Xoay' }, { id: 'pulse', name: 'Nhấp nhô' }, { id: 'still', name: 'Đứng yên' }];
 const FITS = [{ id: 'contain', name: 'Vừa khung' }, { id: 'cover', name: 'Lấp đầy' }, { id: 'stretch', name: 'Kéo giãn' }];
 const TXT_PRESETS = [{ id: 'title', name: 'Rabbit Hole' }, { id: 'queens', name: 'Hai nữ hoàng' }, { id: 'aura', name: 'Aura Battle' }, { id: 'count', name: 'Đếm ngược' }, { id: 'custom', name: 'Chữ riêng' }];
 const TXT_STYLES = [{ id: 'royal', name: 'Hoàng gia' }, { id: 'pop', name: 'Kẹo Y2K' }];
 const TXT_MOTIONS = [{ id: 'pulse', name: 'Nhấp nhô' }, { id: 'swap', name: 'Đổi màu theo nhịp' }, { id: 'scroll', name: 'Chạy ngang' }, { id: 'still', name: 'Đứng yên' }];
 const TXT_POS = [{ id: 'top', name: 'Trên' }, { id: 'center', name: 'Giữa' }, { id: 'bottom', name: 'Dưới' }];
+/* bàn trộn: cách lồng deck B lên deck A */
+const BLENDS = [
+  { id: 'normal', name: 'Mờ dần', op: 'source-over' },
+  { id: 'screen', name: 'Lồng sáng', op: 'screen' },
+  { id: 'lighter', name: 'Cộng sáng', op: 'lighter' },
+  { id: 'multiply', name: 'Lồng tối', op: 'multiply' },
+  { id: 'overlay', name: 'Phủ', op: 'overlay' },
+  { id: 'difference', name: 'Lệch màu', op: 'difference' }
+];
+const BLEND_OP = Object.fromEntries(BLENDS.map(b => [b.id, b.op]));
+const XF_LENS = [[0, 'Ngay'], [1, '1 nhịp'], [2, '2 nhịp'], [4, '4 nhịp'], [8, '8 nhịp']];
+const CUT_EVERY = [[0, 'Tắt'], [0.5, '1/2'], [1, '1'], [2, '2'], [4, '4']];
 const pct = v => Math.round(v * 100) + '%';
 const FX = [
   { id: 'zoom', name: 'Zoom nhịp', desc: 'Hình phóng to rồi thu lại theo mỗi nhịp.', c: '--pink', params: [
@@ -70,19 +58,3 @@ const FXD = Object.fromEntries(FX.map(f => [f.id, f]));
 const FX_ORDER = ['cards', 'hue', 'drink', 'zoom', 'shake', 'mirror', 'kaleido', 'wave', 'tunnel', 'pixel', 'rgb', 'glitch', 'stutter', 'trails', 'invert', 'flash'];
 const DROP_SET = new Set(['zoom', 'rgb', 'shake', 'flash']);
 const KEYS = ['1', '2', '3', '4', 'q', 'w', 'e', 'r', 'a', 's', 'd', 'f', 'z', 'x', 'c', 'v'];
-const BANKS = {
-  fx: FX.map(f => ({ t: 'fx', id: f.id })),
-  scene: [0, 1, 2, 3, 4, 5, 6, 7].map(i => ({ t: 'gen', i }))
-    .concat([0, 1, 2].map(i => ({ t: 'med', i })), [{ t: 'stk' }], ['title', 'queens', 'aura', 'count'].map(id => ({ t: 'txt', id })))
-};
-const DEFAULT_GENS = [
-  { name: 'Sao xoay', g: { shape: 'sparkle', motion: 'rotate', multi: 'grid', pal: 0, size: 0.8, count: 5, speed: 0.5, ctl: '2' } },
-  { name: 'Hầm bong bóng', g: { shape: 'bubble', motion: 'pulse', multi: 'tunnel', pal: 4, size: 0.9, count: 8, speed: 0.5, ctl: '1' } },
-  { name: 'Tim nảy', g: { shape: 'heart', motion: 'bounce', multi: 'grid', pal: 3, size: 0.75, count: 4, speed: 0.5, ctl: '1' } },
-  { name: 'Gương kẹo', g: { shape: 'circle', motion: 'orbit', multi: 'mirror', pal: 2, size: 0.7, count: 5, speed: 0.5, ctl: '0.5' } },
-  { name: 'Nữ hoàng Đỏ', g: { shape: 'card', motion: 'rotate', multi: 'circle', pal: 6, size: 0.8, count: 5, speed: 0.5, ctl: '2' } },
-  { name: 'Nữ hoàng Trắng', g: { shape: 'card', motion: 'wave', multi: 'grid', pal: 7, size: 0.7, count: 6, speed: 0.5, ctl: '2' } },
-  { name: 'Hang thỏ', g: { shape: 'clock', motion: 'spiral', multi: 'tunnel', pal: 8, size: 0.95, count: 9, speed: 0.5, ctl: '1' } },
-  { name: 'Tiệc trà', g: { shape: 'rabbit', motion: 'bounce', multi: 'grid', pal: 9, size: 0.75, count: 5, speed: 0.5, ctl: '1' } }
-];
-const SAFE_GEN = 6;

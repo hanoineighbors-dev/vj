@@ -1,15 +1,16 @@
 'use strict';
-/* Popping Lollipop VJ · media.js */
-/* ---------- media ---------- */
+/* Popping Lollipop VJ · media.js: ảnh, video, thư mục media, bàn trộn 2 deck A/B */
 function fitRect(iw, ih, w, h, mode) {
   if (mode === 'stretch') return [0, 0, w, h];
   const s = mode === 'cover' ? Math.max(w / iw, h / ih) : Math.min(w / iw, h / ih);
   return [(w - iw * s) / 2, (h - ih * s) / 2, iw * s, ih * s];
 }
 function drawMedia(ctx, m) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  if (!m) return false;
   const el = m.video || m.img; if (!el) return false;
   const iw = el.videoWidth || el.naturalWidth, ih = el.videoHeight || el.naturalHeight; if (!iw || !ih) return false;
-  ctx.fillStyle = '#0d0a1a'; ctx.fillRect(0, 0, W, H);
   const [x, y, w, h] = fitRect(iw, ih, W, H, S.mediaFit);
   ctx.drawImage(el, x, y, w, h); return true;
 }
@@ -54,6 +55,8 @@ function askPersist() { if (persistAsked || ROLE !== 'control') return; persistA
 function metaSave(m) { S.mediaMeta[m.id] = { speed: m.speed, reverse: m.reverse, trimA: m.trimA, trimB: m.trimB }; save(); }
 function hashId(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
 
+function mediaById(id) { if (!id) return null; for (const m of S.media) if (m.id === id) return m; return null; }
+
 /* media folder on the controller Mac (Chrome: remembered; Safari: pick each time) */
 async function walkDir(h, prefix, out, depth) {
   for await (const [name, entry] of h.entries()) {
@@ -65,21 +68,21 @@ async function walkDir(h, prefix, out, depth) {
 async function loadFolderFiles(list, folderName) {
   list = list.filter(x => MEDIA_RE.test(x.path) && !x.path.split('/').some(seg => seg.startsWith('.')));
   list.sort((a, b) => a.path.localeCompare(b.path, 'vi', { numeric: true, sensitivity: 'base' }));
-  const cur = S.media[S.mediaSel], keep = new Set();
+  const keep = new Set();
   toast('Đang nạp ' + list.length + ' file từ thư mục "' + folderName + '"...', 6000);
   let added = 0;
   for (let k = 0; k < list.length; k++) {
     const { file, path } = list[k], id = 'f' + hashId(path + '|' + file.size + '|' + file.lastModified); keep.add(id);
-    if (!S.media.some(m => m.id === id)) { await addMedia(file, { id, persist: false, folder: true, path }); added++; if (added % 4 === 0) { renderMedia(); syncPads(); } }
+    if (!S.media.some(m => m.id === id)) { await addMedia(file, { id, persist: false, folder: true, path }); added++; if (added % 4 === 0) renderMediaPads(); }
   }
   S.media.filter(m => m.folder && !keep.has(m.id)).forEach(m => { if (m.video) { m.video.pause(); m.video.remove(); } URL.revokeObjectURL(m.url); });
   const order = new Map(list.map((x, i) => [x.path, i]));
   S.media = S.media.filter(m => !m.folder || keep.has(m.id));
   S.media.sort((a, b) => (a.folder === b.folder) ? (a.folder ? order.get(a.path) - order.get(b.path) : a.t - b.t) : (a.folder ? -1 : 1));
-  S.mediaSel = cur ? S.media.indexOf(cur) : -1; if (S.mediaSel < 0 && S.source === 'media') S.source = 'gen';
   S.folderName = folderName;
   S.media.forEach(m => rcOffer('media', m.id));
-  renderMedia(); syncPads(); setBank('media');
+  firstLoad();
+  renderMediaPads(); renderDecks();
   toast('Đã nạp thư mục "' + folderName + '": ' + S.media.filter(m => m.folder).length + ' file (' + added + ' mới).', 5000);
 }
 async function readFolderHandle(h) { const out = []; await walkDir(h, '', out, 0); await loadFolderFiles(out, h.name); }
@@ -99,64 +102,91 @@ async function reloadFolder(interactive) {
   try {
     let perm = await rec.h.queryPermission({ mode: 'read' });
     if (perm !== 'granted' && interactive) perm = await rec.h.requestPermission({ mode: 'read' });
-    if (perm !== 'granted') { if (!interactive) toast('Bấm "Nạp lại ' + rec.name + '" ở tab Media để mở lại thư mục media.', 6000); return false; }
+    if (perm !== 'granted') { if (!interactive) toast('Bấm "Nạp lại ' + rec.name + '" ở cột Media để mở lại thư mục media.', 6000); return false; }
     await readFolderHandle(rec.h); return true;
   } catch (e) { toast('Không đọc được thư mục "' + rec.name + '". Chọn lại thư mục.', 5000); return false; }
 }
-function selectMedia(i) {
-  S.media.forEach((m, j) => { if (m.video && j !== i) m.video.pause(); });
-  S.mediaSel = i; S.source = i >= 0 ? 'media' : 'gen';
-  const m = S.media[i]; if (m && m.video && m.video.preload !== 'auto') m.video.preload = 'auto';
-  if (m && ROLE === 'control') rcPrioritize(m.id);
-}
 async function handleFiles(files) {
-  const list = Array.from(files).filter(f => /^(image|video)\//.test(f.type));
+  const list = Array.from(files).filter(f => /^(image|video)\//.test(f.type) || MEDIA_RE.test(f.name));
   if (!list.length) return;
-  let first = -1;
-  for (const f of list) { if (f.size > 120e6) { toast('"' + f.name + '" lớn hơn 120 MB, nên cắt ngắn trước.'); continue; } const it = await addMedia(f); if (first < 0) first = S.media.length - 1; rcOffer('media', it.id); }
-  if (first >= 0) selectMedia(first);
-  renderMedia(); syncPads();
+  for (const f of list) { if (f.size > 150e6) { toast('"' + f.name + '" lớn hơn 150 MB, nên cắt ngắn trước.'); continue; } const it = await addMedia(f); rcOffer('media', it.id); renderMediaPads(); }
+  firstLoad(); renderMediaPads(); renderDecks();
 }
-function removeMedia(i) {
-  const m = S.media[i]; if (!m) return;
+function removeMedia(id) {
+  const i = S.media.findIndex(m => m.id === id); if (i < 0) return;
+  const m = S.media[i];
   if (m.video) { m.video.pause(); m.video.remove(); } URL.revokeObjectURL(m.url); if (!m.folder) idbDel('media', m.id);
   S.media.splice(i, 1);
-  if (S.mediaSel === i) { S.mediaSel = -1; S.source = 'gen'; } else if (S.mediaSel > i) S.mediaSel--;
-  renderMedia(); syncPads();
+  if (S.deck.a === id) S.deck.a = null; if (S.deck.b === id) S.deck.b = null; if (S.focus === id) S.focus = null;
+  renderMediaPads(); renderDecks(); save();
 }
 
-/* ---------- stickers ---------- */
-function drawSticker(ctx, st, b) {
-  const m = Math.min(W, H), base = st.size * m, bb = b + st.phase;
-  let x = st.x * W, y = st.y * H, rot = st.rot, sc = 1;
-  switch (st.motion) {
-    case 'bounce': y -= Math.abs(Math.sin(Math.PI * fr(bb))) * base * 0.3; break;
-    case 'shake': rot += Math.sin(bb * TAU) * 0.22; break;
-    case 'spin': rot += bb * 0.9; break;
-    case 'pulse': sc = 1 + 0.28 * Math.pow(1 - fr(bb), 3); break;
+/* ---------- bàn trộn A/B ---------- */
+const liveSide = () => S.deck.x < 0.5 ? 'a' : 'b';
+const otherSide = s => s === 'a' ? 'b' : 'a';
+/* deck chưa có gì thì media đầu tiên vào thẳng deck A */
+function firstLoad() {
+  if (ROLE !== 'control') return;
+  if (!mediaById(S.deck.a)) S.deck.a = null; if (!mediaById(S.deck.b)) S.deck.b = null;
+  if (!S.deck.a && !S.deck.b && S.media.length) { S.deck.a = S.media[0].id; S.deck.x = 0; S.focus = S.deck.a; }
+}
+/* chọn media: nạp vào deck đang ẩn rồi tự chuyển sang (như DJ đẩy thanh trượt) */
+function loadMedia(id, opt = {}) {
+  const m = mediaById(id); if (!m) return;
+  S.focus = id;
+  const live = liveSide();
+  if (!S.deck.a && !S.deck.b) { S.deck.a = id; S.deck.x = 0; S.xfAnim = null; }
+  else if (opt.live) { S.deck[live] = id; }
+  else if (S.deck[live] === id && !S.xfAnim) { /* đang chiếu rồi */ }
+  else {
+    const hid = otherSide(live);
+    if (S.deck[hid] !== id) S.deck[hid] = id;
+    if (S.deck.autoTake || opt.take) take();
   }
-  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(sc, sc);
-  if (st.kind.startsWith('img:')) {
-    const cs = S.customStickers.find(c => 'img:' + c.id === st.kind);
-    if (cs && cs.img && cs.img.naturalWidth) { const s = base / Math.max(cs.img.naturalWidth, cs.img.naturalHeight), w = cs.img.naturalWidth * s, h = cs.img.naturalHeight * s; ctx.drawImage(cs.img, -w / 2, -h / 2, w, h); }
-  } else drawKind(ctx, st.kind, base / 2);
-  ctx.restore();
+  if (m.video && m.video.preload !== 'auto') m.video.preload = 'auto';
+  if (ROLE === 'control') rcPrioritize(id);
+  renderMediaPads(); renderDecks(); renderFocus(); save();
 }
-function drawStickers(ctx, b) { for (const st of S.stickers) drawSticker(ctx, st, b); }
-function addSticker(kind, o) {
-  S.stickers.push(newSticker(kind, o)); if (S.stickers.length > 30) S.stickers.shift();
-  S.selSticker = S.stickers.length - 1; renderStickerSel(); save();
+function take(len) {
+  const live = liveSide(), to = live === 'a' ? 1 : 0;
+  if (!S.deck[otherSide(live)]) return;
+  const L = len === undefined ? S.deck.len : len;
+  if (!L) { S.deck.x = to; S.xfAnim = null; renderDecks(); return; }
+  S.xfAnim = { from: S.deck.x, to, start: S.beats, len: L };
 }
-function scatter(n) {
-  const all = [...STICKERS.map(s => s.id), ...S.customStickers.map(c => 'img:' + c.id)];
-  for (let i = 0; i < n; i++) S.stickers.push(newSticker(pick(all), { motion: pick(['bounce', 'shake', 'spin', 'pulse']) }));
-  while (S.stickers.length > 30) S.stickers.shift();
-  S.selSticker = -1; renderStickerSel(); save();
+function setX(v) { S.xfAnim = null; S.deck.x = clamp(v, 0, 1); }
+function mixerStep() {
+  const a = S.xfAnim; if (!a) return;
+  const k = (S.beats - a.start) / a.len;
+  if (k >= 1 || k < 0) { S.deck.x = a.to; S.xfAnim = null; if (ROLE === 'control') renderDecks(); return; }
+  const e = k * k * (3 - 2 * k); S.deck.x = a.from + (a.to - a.from) * e;
 }
-async function addCustomSticker(file, opt = {}) {
-  if (opt.id && S.customStickers.some(c => c.id === opt.id)) return opt.id;
-  const id = opt.id || 's' + Date.now() + Math.random().toString(36).slice(2, 5), url = URL.createObjectURL(file), img = new Image(); img.src = url; await img.decode().catch(() => {});
-  S.customStickers.push({ id, img, url, name: file.name, blob: file });
-  if (opt.persist !== false) idbPut('stickers', { id, t: Date.now(), name: file.name, type: file.type, blob: file });
-  return id;
+function stepFocus(d) {
+  if (!S.media.length) return;
+  let i = S.media.findIndex(m => m.id === S.focus); i = i < 0 ? 0 : (i + d + S.media.length) % S.media.length;
+  loadMedia(S.media[i].id);
+  const pg = Math.floor(i / 16); if (pg !== S.mpage) { S.mpage = pg; renderMediaPads(); }
+}
+/* vẽ 2 deck rồi lồng vào khung hình chính */
+let vidT = 0;
+function drawDecks(ctx, b, dt, now) {
+  const D_ = S.deck, ma = mediaById(D_.a), mb = mediaById(D_.b);
+  const cutting = D_.cut > 0 && ma && mb;
+  let wa, wb;
+  if (cutting) { const showB = Math.floor(b / D_.cut) % 2 === 1; wa = showB ? 0 : 1; wb = showB ? 1 : 0; }
+  else if (D_.blend === 'normal') { wa = ma ? (D_.x < 1 ? 1 : 0) : 0; wb = mb ? D_.x : 0; }
+  else { wa = ma ? Math.min(1, 2 * (1 - D_.x)) : 0; wb = mb ? Math.min(1, 2 * D_.x) : 0; }
+  if (ma && wa > 0) videoStep(ma, dt);
+  if (mb && wb > 0 && mb !== ma) videoStep(mb, dt);
+  if (now - vidT > 400) { vidT = now; S.media.forEach(m => { if (m.video && !m.video.paused && ((m !== ma || wa <= 0) && (m !== mb || wb <= 0))) m.video.pause(); }); }
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  if (wa > 0) { drawMedia(DA.ctx, ma); ctx.globalAlpha = (D_.blend === 'normal' || cutting) ? 1 : wa; ctx.drawImage(DA.cv, 0, 0); }
+  if (wb > 0) {
+    drawMedia(DB.ctx, mb);
+    ctx.globalAlpha = cutting ? 1 : wb;
+    ctx.globalCompositeOperation = (cutting || wa <= 0) ? 'source-over' : (BLEND_OP[D_.blend] || 'source-over');
+    ctx.drawImage(DB.cv, 0, 0);
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
 }

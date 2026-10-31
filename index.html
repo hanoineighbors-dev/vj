@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Popping Lollipop VJ</title>
-<meta name="description" content="Bộ đồ chơi visual cho Party DJ: pad hiệu ứng theo nhịp, Generator Studio, sticker và màn chiếu điều khiển từ xa.">
+<meta name="description" content="Bộ đồ chơi visual cho Party DJ: media, bàn trộn A/B, 16 effect theo nhịp và màn chiếu điều khiển từ xa.">
 <meta name="theme-color" content="#171230">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -24,179 +24,181 @@
         <rect x="-3" y="6" width="6" height="25" rx="3" fill="#fff" stroke="#D9CFF5" stroke-width="1.5"/>
         <circle cx="0" cy="-8" r="21" fill="#FF4FA3" stroke="#fff" stroke-width="3"/>
         <path fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" d="M0-8 m0 0 q3 -3 5 0 q3 6 -3 9 q-9 3 -12 -5 q-3 -11 8 -15 q14 -3 18 9 q3 12 -9 18"/>
-        <ellipse cx="-9" cy="-19" rx="5" ry="3" fill="#fff" opacity=".7" transform="rotate(-35 -9 -19)"/>
       </svg>
-      <div>
-        <h1>Popping <b>Lollipop</b> VJ</h1>
-        <p>Bộ đồ chơi visual cho Party DJ</p>
+      <div><h1>Popping <b>Lollipop</b> VJ</h1></div>
+    </div>
+    <div class="beatbar" id="deck">
+      <div class="leds" id="leds" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="bpm-box">
+        <button type="button" class="step" id="bpmDown" aria-label="Giảm BPM">−</button>
+        <input id="bpm" type="text" inputmode="decimal" autocomplete="off" value="124" aria-label="BPM">
+        <button type="button" class="step" id="bpmUp" aria-label="Tăng BPM">+</button>
       </div>
+      <button type="button" class="gel tap" id="btnTap" title="Phím T"><b>TAP</b></button>
+      <button type="button" class="gel gel-sm" id="btnX2" aria-label="Nhân đôi BPM">×2</button>
+      <button type="button" class="gel gel-sm" id="btnHalf" aria-label="Giảm nửa BPM">÷2</button>
+      <div class="nudge"><button type="button" id="nudgeL" aria-label="Nudge lùi">◀</button><button type="button" id="nudgeR" aria-label="Nudge tới">▶</button></div>
     </div>
     <div class="top-actions">
-      <button type="button" class="badge" id="remoteBadge" title="Màn chiếu từ xa"><i></i><span>Màn chiếu: 0</span></button>
-      <div class="seg" role="group" aria-label="Chế độ giao diện" id="modeSeg">
-        <button type="button" data-mode="play" aria-pressed="true">Chơi</button>
-        <button type="button" data-mode="pro" aria-pressed="false">Pro</button>
-      </div>
-      <button type="button" class="switch" role="switch" aria-checked="true" id="soundSw"><span class="track"><span class="thumb"></span></span><span>Bíp</span></button>
-      <button type="button" class="gel gel-sm" style="--c:var(--lime)" id="btnSafe">Về hình an toàn</button>
-      <button type="button" class="gel gel-sm gel-dark" id="btnBlack" aria-pressed="false">Blackout</button>
+      <button type="button" class="badge" id="remoteBadge" title="Màn chiếu từ xa"><i></i><span>Màn chiếu</span></button>
+      <button type="button" class="gel gel-sm" id="btnSettings">Cài đặt</button>
+      <button type="button" class="gel gel-sm" style="--c:var(--lime)" id="btnSafe" title="Phím H">Về hình an toàn</button>
+      <button type="button" class="gel gel-sm gel-dark" id="btnBlack" aria-pressed="false" title="Phím B">Blackout</button>
     </div>
   </header>
 
-  <main class="grid">
-    <section class="col-left" aria-label="Xem thử và nhịp">
-      <div class="tv panel">
-        <div class="tv-top"><span class="pixel">Frame <b id="frameInfo">16:9 1280x720</b></span><span class="pixel" id="outTag">Output: chưa mở</span></div>
-        <div class="stage" id="stage"><canvas id="cv" width="1280" height="720" aria-label="Xem thử hình xuất ra màn hình"></canvas></div>
-        <div class="tv-bot">
-          <div class="row">
-            <button type="button" class="gel gel-sm" style="--c:var(--pink)" id="btnOut">Mở cửa sổ Output</button>
-            <button type="button" class="gel gel-sm" style="--c:var(--aqua)" id="btnFull">Xem toàn màn hình</button>
-          </div>
-          <span class="pixel" id="fps">FPS --</span>
+  <main class="main">
+    <!-- cột 1: media -->
+    <section class="col" aria-label="Media">
+      <div class="panel">
+        <div class="ph">
+          <h2>Media</h2>
+          <div class="row" id="mpageBox"><button type="button" class="step" id="mpPrev" aria-label="Trang trước">‹</button><span class="pixel" id="mpLbl">1/1</span><button type="button" class="step" id="mpNext" aria-label="Trang sau">›</button></div>
         </div>
+        <div class="row" style="margin-bottom:10px;gap:6px">
+          <button type="button" class="gel gel-sm" style="--c:var(--sun)" id="btnFolder">Chọn thư mục</button>
+          <button type="button" class="gel gel-sm" style="--c:var(--lime)" id="btnFolderReload" hidden>Nạp lại</button>
+          <button type="button" class="gel gel-sm" style="--c:var(--aqua)" id="btnUpMed">Thêm file</button>
+          <input type="file" id="fileMed" accept="image/*,video/*" multiple hidden>
+          <input type="file" id="fileDir" webkitdirectory multiple hidden>
+        </div>
+        <div class="mgrid" id="mgrid"></div>
+        <div class="focusbox" id="focusBox"></div>
+        <p class="note" id="medInfo" style="margin-top:8px;font-size:12px"></p>
       </div>
 
-      <div class="deck panel" id="deck">
-        <div class="deck-row" style="justify-content:space-between">
-          <div class="leds" id="leds" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-          <div class="bpm-box">
-            <button type="button" class="step" id="bpmDown" aria-label="Giảm BPM">−</button>
-            <input id="bpm" type="text" inputmode="decimal" autocomplete="off" value="124" aria-label="BPM">
-            <button type="button" class="step" id="bpmUp" aria-label="Tăng BPM">+</button>
-            <span class="pixel">BPM</span>
-          </div>
-          <button type="button" class="gel tap" id="btnTap"><b>TAP</b><small>gõ theo nhịp, phím T</small></button>
-        </div>
-        <div class="deck-row">
-          <button type="button" class="gel gel-sm" id="btnX2" aria-label="Nhân đôi BPM">×2</button>
-          <button type="button" class="gel gel-sm" id="btnHalf" aria-label="Giảm nửa BPM">÷2</button>
-          <div class="nudge"><button type="button" id="nudgeL" aria-label="Nudge lùi">◀</button><span class="pixel">Nudge</span><button type="button" id="nudgeR" aria-label="Nudge tới">▶</button></div>
-          <button type="button" class="gel gel-sm" id="btnDown1" style="--c:var(--sun)">Đặt nhịp 1</button>
-        </div>
-        <div class="deck-row">
-          <div class="field"><span class="lbl">Chia nhịp</span><div class="chips" id="divChips"></div></div>
-          <div class="field"><button type="button" class="switch" role="switch" aria-checked="false" id="autoSw"><span class="track"><span class="thumb"></span></span><span>Tự động</span></button><div class="chips" id="autoChips"></div></div>
-        </div>
-        <div class="deck-row">
+      <div class="panel">
+        <div class="ph"><h2>Chữ trên màn</h2><button type="button" class="gel gel-sm" id="btnTextSet">Chỉnh chữ</button></div>
+        <div class="chips sm" id="txtQuick"></div>
+      </div>
+
+      <div class="panel beat">
+        <div class="ph"><h2>Nhịp</h2><button type="button" class="gel gel-sm" id="btnDown1" style="--c:var(--sun)">Đặt nhịp 1</button></div>
+        <div class="mrow"><span class="lbl">Effect đập theo</span><div class="chips sm" id="divChips"></div></div>
+        <div class="mrow">
           <button type="button" class="switch" role="switch" aria-checked="false" id="micSw"><span class="track"><span class="thumb"></span></span><span>Nghe mic</span></button>
           <div class="meters" aria-hidden="true"><div class="meter"><i id="mLevel"></i></div><div class="meter conf"><i id="mConf"></i></div></div>
-          <div class="mic-text" id="micText" aria-live="polite">Mic đang tắt. Gõ BPM hoặc bấm Tap.</div>
           <button type="button" class="gel gel-sm" id="btnUseMic" hidden>Dùng nhịp mic</button>
         </div>
+        <div class="mic-text" id="micText" aria-live="polite">Mic đang tắt. Gõ BPM hoặc bấm Tap.</div>
+        <div class="mrow"><button type="button" class="switch" role="switch" aria-checked="false" id="autoSw"><span class="track"><span class="thumb"></span></span><span>Tự động đổi effect và media</span></button><div class="chips sm" id="autoChips"></div></div>
       </div>
     </section>
 
-    <section class="col-right" aria-label="Pad và bộ công cụ">
-      <div class="panel">
-        <div class="panel-head">
-          <div class="seg" role="group" aria-label="Bàn pad" id="bankSeg">
-            <button type="button" data-bank="fx" aria-pressed="true">Effect</button>
-            <button type="button" data-bank="scene" aria-pressed="false">Cảnh</button>
-            <button type="button" data-bank="media" aria-pressed="false">Media</button>
+    <!-- cột 2: xem thử, bàn trộn, nhịp, chữ -->
+    <section class="col" aria-label="Xem thử và bàn trộn">
+      <div class="tv panel">
+        <div class="tv-top"><span class="pixel">Frame <b id="frameInfo"></b></span><span class="pixel" id="fps">FPS --</span></div>
+        <div class="stage" id="stage"><canvas id="cv" width="1280" height="720" aria-label="Xem thử hình xuất ra màn hình"></canvas><div class="stage-hint" id="stageHint">Chọn thư mục media hoặc thêm file ở cột trái, rồi bấm vào media để chiếu.</div></div>
+      </div>
+
+      <div class="panel mixer">
+        <div class="decks">
+          <div class="deckc" id="deckA"><div class="th"><b>A</b></div><span>Trống</span></div>
+          <div class="xfwrap">
+            <input class="xf" type="range" id="xf" min="0" max="1000" value="0" aria-label="Thanh trượt A B">
+            <div class="xflbl"><span>A</span><span id="xfVal">A</span><span>B</span></div>
+            <button type="button" class="gel take" id="btnTake" title="Phím Enter">Chuyển A ⇄ B</button>
           </div>
-          <div class="row" id="mpageBox" hidden><button type="button" class="step" id="mpPrev" aria-label="Trang media trước">‹</button><span class="pixel" id="mpLbl">Trang 1/1</span><button type="button" class="step" id="mpNext" aria-label="Trang media sau">›</button></div>
-          <div class="seg" role="group" aria-label="Kiểu bấm pad" id="padModeSeg">
-            <button type="button" data-pm="toggle" aria-pressed="true">Bật tắt</button>
-            <button type="button" data-pm="hold" aria-pressed="false">Giữ</button>
+          <div class="deckc" id="deckB"><div class="th"><b>B</b></div><span>Trống</span></div>
+        </div>
+        <div class="mrow"><span class="lbl">Thời gian chuyển</span><div class="chips sm" id="lenChips"></div></div>
+        <div class="mrow"><span class="lbl">Kiểu lồng</span><div class="chips sm" id="blendChips"></div></div>
+        <div class="mrow"><span class="lbl">Cắt A B theo nhịp</span><div class="chips sm" id="cutChips"></div></div>
+        <div class="mrow"><button type="button" class="switch" role="switch" aria-checked="true" id="autoTakeSw"><span class="track"><span class="thumb"></span></span><span>Bấm media là tự chuyển sang</span></button></div>
+      </div>
+
+    </section>
+
+    <!-- cột 3: effect -->
+    <section class="col" aria-label="Effect">
+      <div class="panel">
+        <div class="ph">
+          <h2>Effect</h2>
+          <div class="row">
+            <div class="seg" role="group" aria-label="Kiểu bấm pad" id="padModeSeg">
+              <button type="button" data-pm="toggle" aria-pressed="true">Bật tắt</button>
+              <button type="button" data-pm="hold" aria-pressed="false">Giữ</button>
+            </div>
+            <button type="button" class="gel gel-sm" id="btnFxOff">Tắt hết</button>
           </div>
         </div>
         <div class="pad-grid" id="padGrid"></div>
         <div class="master">
-          <button type="button" class="gel drop" id="btnDrop">DROP</button>
-          <div class="field"><span class="lbl">Độ sáng</span><input type="range" id="dim" min="0" max="100" value="100" aria-label="Độ sáng tổng"><span class="pixel" id="dimVal">100%</span></div>
-          <button type="button" class="gel gel-sm" style="--c:var(--aqua)" id="btnFreeze" aria-pressed="false">Đóng băng</button>
+          <button type="button" class="gel drop" id="btnDrop" title="Giữ Space">DROP</button>
+          <div class="field"><span class="lbl">Sáng</span><input type="range" id="dim" min="0" max="100" value="100" aria-label="Độ sáng tổng"><span class="pixel" id="dimVal">100%</span></div>
+          <button type="button" class="gel gel-sm" style="--c:var(--aqua)" id="btnFreeze" aria-pressed="false" title="Phím P">Đóng băng</button>
         </div>
-        <p class="hint">Phím 1 2 3 4, Q W E R, A S D F, Z X C V cho 16 pad. ` đổi bàn pad (Effect, Cảnh, Media), [ ] lật trang media, giữ Space là DROP, P đóng băng, B Blackout, T Tap, H hình an toàn.</p>
-      </div>
-
-      <div class="panel">
-        <div class="tabs" role="tablist" aria-label="Bộ công cụ" id="tabs">
-          <button type="button" class="tab" role="tab" data-tab="fx" aria-selected="true">Effect</button>
-          <button type="button" class="tab" role="tab" data-tab="gen" aria-selected="false">Generator</button>
-          <button type="button" class="tab" role="tab" data-tab="stk" aria-selected="false">Sticker</button>
-          <button type="button" class="tab" role="tab" data-tab="txt" aria-selected="false">Chữ</button>
-          <button type="button" class="tab" role="tab" data-tab="med" aria-selected="false">Media</button>
-          <button type="button" class="tab" role="tab" data-tab="out" aria-selected="false">Màn chiếu</button>
-        </div>
-
-        <div class="tabpanel" id="tp-fx" role="tabpanel">
-          <div class="sub"><div><h3 id="fxName"></h3><p id="fxDesc"></p></div><button type="button" class="gel gel-sm" id="btnFxOff">Tắt hết effect</button></div>
+        <div class="fxedit">
+          <div><h3 id="fxName"></h3><p id="fxDesc"></p></div>
           <div class="knobs" id="fxKnobs"></div>
-          <div class="group"><span class="lbl">Chọn effect để chỉnh</span><div class="chips" id="fxPick"></div></div>
         </div>
-
-        <div class="tabpanel" id="tp-gen" role="tabpanel" hidden>
-          <div class="sub"><div><h3>Generator Studio</h3><p>Ghép hình, chuyển động, nhân bản và màu để tạo visual mà không cần upload gì.</p></div>
-            <div class="row"><button type="button" class="gel" style="--c:var(--sun)" id="btnDice">Xúc xắc</button></div></div>
-          <div id="genBody" class="tabpanel"></div>
-        </div>
-
-        <div class="tabpanel" id="tp-stk" role="tabpanel" hidden>
-          <div class="sub"><div><h3>Sticker</h3><p>Bấm để dán lên màn hình, kéo trên khung xem thử để đặt chỗ.</p></div>
-            <div class="row"><button type="button" class="gel gel-sm" style="--c:var(--sun)" id="btnScatter">Dán bừa</button><button type="button" class="gel gel-sm" id="btnClearStk">Dọn sạch</button></div></div>
-          <div class="tray" id="tray"></div>
-          <div class="row"><button type="button" class="gel gel-sm" style="--c:var(--aqua)" id="btnUpStk">Thêm sticker PNG</button><input type="file" id="fileStk" accept="image/png,image/webp,image/gif,image/*" hidden></div>
-          <div id="stkSel" class="tabpanel"></div>
-          <div class="row pro-only"><button type="button" class="switch" role="switch" aria-checked="false" id="stkFxSw"><span class="track"><span class="thumb"></span></span><span>Cho effect tác động lên sticker</span></button></div>
-        </div>
-
-        <div class="tabpanel" id="tp-txt" role="tabpanel" hidden>
-          <div class="sub"><div><h3>Chữ trên màn</h3><p>Chữ nằm trên cùng, không bị effect làm méo. Pad Z X C V ở bàn Cảnh bật nhanh 4 mẫu đầu.</p></div></div>
-          <div class="group"><span class="lbl">Mẫu chữ</span><div class="chips" id="txtPreset"></div></div>
-          <div class="row"><input class="txt" id="txtCustom" maxlength="80" placeholder="Chữ riêng, xuống dòng bằng dấu /" aria-label="Chữ riêng"></div>
-          <div class="row"><span class="lbl">Đếm ngược tới</span><input class="txt" id="txtTarget" type="time" value="00:00" style="flex:0 0 auto" aria-label="Giờ đích"><input class="txt" id="txtLabel" maxlength="40" value="TRAO GIẢI SAU" aria-label="Nhãn đếm ngược"></div>
-          <div class="group"><span class="lbl">Kiểu chữ</span><div class="chips" id="txtStyle"></div></div>
-          <div class="group"><span class="lbl">Chuyển động</span><div class="chips" id="txtMotion"></div></div>
-          <div class="group"><span class="lbl">Vị trí</span><div class="chips" id="txtPos"></div></div>
-          <div class="knobs" id="txtKnobs"></div>
-        </div>
-
-        <div class="tabpanel" id="tp-med" role="tabpanel" hidden>
-          <div class="sub"><div><h3>Media của bạn</h3><p>Mỗi media là một pad ở bàn Media (16 pad mỗi trang). Media tự gửi sang màn chiếu từ xa, màn chiếu cũng lưu lại để lần sau không phải gửi lại.</p></div></div>
-          <div class="row">
-            <button type="button" class="gel gel-sm" style="--c:var(--sun)" id="btnFolder">Chọn thư mục media</button>
-            <button type="button" class="gel gel-sm" style="--c:var(--lime)" id="btnFolderReload" hidden>Nạp lại thư mục</button>
-            <button type="button" class="gel gel-sm" style="--c:var(--aqua)" id="btnUpMed">Thêm từng file</button>
-            <input type="file" id="fileMed" accept="image/*,video/*" multiple hidden>
-            <input type="file" id="fileDir" webkitdirectory multiple hidden>
-          </div>
-          <p class="note" id="medInfo">Ảnh và video thêm bằng nút Thêm từng file được lưu trong trình duyệt này. Thư mục media được đọc trực tiếp từ máy, sắp theo tên file (đặt tên 01, 02, 03... để xếp thứ tự pad).</p>
-          <div id="mlib" class="mlib"></div>
-          <div id="medSel" class="tabpanel"></div>
-        </div>
-
-        <div class="tabpanel" id="tp-out" role="tabpanel" hidden>
-          <div class="remote" id="remoteBox">
-            <div class="sub"><div><h3>Màn chiếu từ xa</h3><p>iPad hoặc MacBook cắm máy chiếu quét mã QR hoặc mở địa chỉ dưới đây, nhập mã. Hai máy cần có internet để ghép mã.</p></div></div>
-            <div class="remote-top">
-              <div class="qr" id="qr" aria-label="Mã QR mở màn chiếu"></div>
-              <div class="group"><span class="lbl">Mã kết nối</span><div class="code" id="rcCode">----</div></div>
-            </div>
-            <div class="url" id="rcUrl"></div>
-            <p class="d-stat" id="rcStat" aria-live="polite" style="color:var(--ink)">Đang chuẩn bị...</p>
-            <ul class="rlist" id="rcList"></ul>
-            <div class="row">
-              <button type="button" class="gel gel-sm" id="rcCopy">Chép địa chỉ</button>
-              <button type="button" class="gel gel-sm" id="rcRestart">Kết nối lại</button>
-              <button type="button" class="gel gel-sm" id="rcNew">Đổi mã</button>
-              <a class="gel gel-sm" style="text-decoration:none" id="rcSelf" href="#man-chieu">Máy này làm màn chiếu</a>
-            </div>
-          </div>
-          <div class="group"><span class="lbl">Tỉ lệ khung</span><div class="chips" id="aspChips"></div></div>
-          <div class="row pro-only" id="customRow"><span class="lbl">Tùy chỉnh</span><input class="num" id="cw" inputmode="numeric" aria-label="Chiều rộng tỉ lệ" value="21"><span>:</span><input class="num" id="ch" inputmode="numeric" aria-label="Chiều cao tỉ lệ" value="9"><span class="lbl" style="margin-left:10px">Độ phân giải</span><select id="resSel" aria-label="Độ phân giải cạnh dài"><option value="640">640</option><option value="960">960</option><option value="1280" selected>1280</option><option value="1920">1920</option></select></div>
-          <div class="group"><span class="lbl">Cách đặt hình vào màn</span><div class="chips" id="fitChips"></div></div>
-          <div class="knobs" id="outKnobs"></div>
-          <div class="row"><button type="button" class="switch" role="switch" aria-checked="true" id="xfadeSw"><span class="track"><span class="thumb"></span></span><span>Chuyển cảnh mờ dần</span></button></div>
-          <div class="row"><button type="button" class="switch" role="switch" aria-checked="false" id="guideSw"><span class="track"><span class="thumb"></span></span><span>Đường căn chỉnh và ô thử màu</span></button></div>
-          <div class="group pro-only"><span class="lbl">An toàn chớp sáng</span><div class="row"><button type="button" class="switch" role="switch" aria-checked="true" id="limitSw"><span class="track"><span class="thumb"></span></span><span>Giới hạn 3 lần chớp mỗi giây</span></button></div><p class="note warn" id="limitWarn" hidden>Đã mở khóa. Chớp nhanh có thể gây khó chịu hoặc co giật ở người nhạy sáng.</p></div>
-          <div class="group"><span class="lbl">Cùng một máy</span><div class="row"><button type="button" class="gel gel-sm" style="--c:var(--pink)" id="btnOut2">Mở cửa sổ Output</button></div>
-          <p class="note" id="outNote">Dùng khi máy chiếu cắm thẳng vào máy này: kéo cửa sổ Output sang màn hình thứ hai, nhấp đúp để toàn màn hình.</p></div>
-        </div>
+        <p class="hint">Effect: 1 2 3 4, Q W E R, A S D F, Z X C V. Media: ← → chọn trước/sau, Enter chuyển A ⇄ B, [ ] lật trang. Giữ Space là DROP, T Tap, P đóng băng, B Blackout, H hình an toàn.</p>
       </div>
     </section>
   </main>
 </div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Cài đặt">
+  <div class="row" style="justify-content:space-between"><h2>Cài đặt</h2><button type="button" class="gel gel-sm" id="btnCloseSet">Đóng</button></div>
+
+  <section class="remote" id="remoteBox">
+    <h3>Màn chiếu từ xa</h3>
+    <p class="note">iPad hoặc MacBook cắm máy chiếu quét mã QR hoặc mở địa chỉ dưới đây, nhập mã. Hai máy cần internet để ghép mã.</p>
+    <div class="remote-top">
+      <div class="qr" id="qr" aria-label="Mã QR mở màn chiếu"></div>
+      <div class="group"><span class="lbl">Mã kết nối</span><div class="code" id="rcCode">----</div></div>
+    </div>
+    <div class="url" id="rcUrl"></div>
+    <p class="d-stat" id="rcStat" aria-live="polite" style="color:var(--ink)">Đang chuẩn bị...</p>
+    <ul class="rlist" id="rcList"></ul>
+    <div class="row">
+      <button type="button" class="gel gel-sm" id="rcCopy">Chép địa chỉ</button>
+      <button type="button" class="gel gel-sm" id="rcRestart">Kết nối lại</button>
+      <button type="button" class="gel gel-sm" id="rcNew">Đổi mã</button>
+      <a class="gel gel-sm" style="text-decoration:none" id="rcSelf" href="#man-chieu">Máy này làm màn chiếu</a>
+    </div>
+  </section>
+
+  <section id="textBox">
+    <h3>Chữ trên màn</h3>
+    <div class="row"><input class="txt" id="txtCustom" maxlength="80" placeholder="Chữ riêng, xuống dòng bằng dấu /" aria-label="Chữ riêng"></div>
+    <div class="row"><span class="lbl">Đếm ngược tới</span><input class="txt" id="txtTarget" type="time" value="00:00" style="flex:0 0 auto" aria-label="Giờ đích"><input class="txt" id="txtLabel" maxlength="40" value="TRAO GIẢI SAU" aria-label="Nhãn đếm ngược"></div>
+    <div class="group"><span class="lbl">Kiểu chữ</span><div class="chips sm" id="txtStyle"></div></div>
+    <div class="group"><span class="lbl">Chuyển động</span><div class="chips sm" id="txtMotion"></div></div>
+    <div class="group"><span class="lbl">Vị trí</span><div class="chips sm" id="txtPos"></div></div>
+    <div class="knobs" id="txtKnobs"></div>
+  </section>
+
+  <section>
+    <h3>Khung hình</h3>
+    <div class="group"><span class="lbl">Tỉ lệ khung</span><div class="chips sm" id="aspChips"></div></div>
+    <div class="row pro-only"><span class="lbl">Tùy chỉnh</span><input class="num" id="cw" inputmode="numeric" aria-label="Chiều rộng tỉ lệ" value="21"><span>:</span><input class="num" id="ch" inputmode="numeric" aria-label="Chiều cao tỉ lệ" value="9"></div>
+    <div class="row"><span class="lbl">Độ phân giải</span><select id="resSel" aria-label="Độ phân giải cạnh dài"><option value="640">640</option><option value="960">960</option><option value="1280" selected>1280</option><option value="1920">1920</option></select></div>
+    <div class="group"><span class="lbl">Đặt hình vào màn chiếu</span><div class="chips sm" id="fitChips"></div></div>
+    <div class="group"><span class="lbl">Đặt media vào khung</span><div class="chips sm" id="mfitChips"></div></div>
+    <div class="knobs" id="outKnobs"></div>
+    <div class="row"><button type="button" class="switch" role="switch" aria-checked="false" id="guideSw"><span class="track"><span class="thumb"></span></span><span>Đường căn chỉnh và ô thử màu</span></button></div>
+  </section>
+
+  <section>
+    <h3>Cùng một máy</h3>
+    <p class="note" id="outNote">Dùng khi máy chiếu cắm thẳng vào máy này: mở cửa sổ Output, kéo sang màn hình thứ hai, nhấp đúp để toàn màn hình.</p>
+    <div class="row"><button type="button" class="gel gel-sm" style="--c:var(--pink)" id="btnOut">Mở cửa sổ Output</button><button type="button" class="gel gel-sm" style="--c:var(--aqua)" id="btnFull">Xem thử toàn màn hình</button><span class="pixel" id="outTag">Output: chưa mở</span></div>
+  </section>
+
+  <section>
+    <h3>Giao diện và an toàn</h3>
+    <div class="seg" role="group" aria-label="Chế độ giao diện" id="modeSeg">
+      <button type="button" data-mode="play" aria-pressed="true">Chơi (2 núm mỗi effect)</button>
+      <button type="button" data-mode="pro" aria-pressed="false">Pro (3 núm)</button>
+    </div>
+    <div class="row"><button type="button" class="switch" role="switch" aria-checked="true" id="soundSw"><span class="track"><span class="thumb"></span></span><span>Tiếng bíp khi bấm</span></button></div>
+    <div class="row"><button type="button" class="switch" role="switch" aria-checked="true" id="limitSw"><span class="track"><span class="thumb"></span></span><span>Giới hạn 3 lần chớp sáng mỗi giây</span></button></div>
+    <p class="note warn" id="limitWarn" hidden>Đã mở khóa. Chớp nhanh có thể gây khó chịu hoặc co giật ở người nhạy sáng.</p>
+  </section>
+</aside>
 
 <div id="disp" hidden>
   <div class="d-card" id="dCard">

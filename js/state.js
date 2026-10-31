@@ -1,38 +1,31 @@
 'use strict';
-/* Popping Lollipop VJ · state.js */
-/* ---------- state ---------- */
+/* Popping Lollipop VJ · state.js: trạng thái app, lưu cài đặt, kho media trong trình duyệt */
 const S = {
-  mode: 'play', tab: 'fx', sound: true, bank: 'fx',
+  mode: 'play', sound: true,
   bpm: 124, div: 1, beats: 0, epoch: 0, manualLock: false,
   aspect: '16:9', custom: [21, 9], res: 1280, screenAR: 16 / 9, outFit: 'contain', mediaFit: 'cover', guides: false,
-  mpage: 0, mediaMeta: {}, folderName: '',
-  padMode: 'toggle', black: false, limit: true, dim: 1, freeze: false, drop: false, lat: 0, xfade: true,
+  mpage: 0, mediaMeta: {}, folderName: '', focus: null,
+  padMode: 'toggle', black: false, limit: true, dim: 1, freeze: false, drop: false, lat: 0,
   auto: { on: false, every: 8, last: -1, fx: null },
   fx: {}, selFx: 'zoom',
-  gens: JSON.parse(JSON.stringify(DEFAULT_GENS)),
-  genSlot: SAFE_GEN, gen: null, source: 'gen',
-  media: [], mediaSel: -1,
-  stickers: [], selSticker: -1, stickerFx: false, customStickers: [],
+  media: [],
+  /* bàn trộn: a, b là id media; x là vị trí thanh trượt (0 = A, 1 = B) */
+  deck: { a: null, b: null, x: 0, blend: 'normal', cut: 0, autoTake: true, len: 2 },
+  xfAnim: null,
   text: { on: false, preset: 'title', custom: '', target: '00:00', label: 'TRAO GIẢI SAU', style: 'royal', motion: 'pulse', pos: 'center', size: 0.6 }
 };
 FX.forEach(f => { S.fx[f.id] = { on: false, held: false, p: Object.fromEntries(f.params.map(p => [p.k, p.val])) }; });
-S.fx.zoom.on = true;
-S.gen = { ...S.gens[SAFE_GEN].g };
-let sid = 1;
-const newSticker = (kind, o = {}) => ({ id: sid++, kind, x: rnd(0.12, 0.88), y: rnd(0.14, 0.86), size: rnd(0.14, 0.22), rot: rnd(-0.25, 0.25), motion: 'bounce', phase: Math.random(), ...o });
-S.stickers = [newSticker('rabbit', { x: 0.12, y: 0.24, size: 0.2, motion: 'bounce' }), newSticker('clock', { x: 0.87, y: 0.22, size: 0.18, motion: 'pulse' }), newSticker('drinkme', { x: 0.86, y: 0.8, size: 0.2, motion: 'shake' })];
 
-/* persistence (settings only; media go to IndexedDB) */
-const LS_KEY = 'plv-state-v2';
+const LS_KEY = 'plv-state-v3';
 let saveT = 0;
 function save() {
   if (ROLE !== 'control') return;
   clearTimeout(saveT);
   saveT = setTimeout(() => {
     lsSet(LS_KEY, JSON.stringify({
-      mode: S.mode, sound: S.sound, bank: S.bank, bpm: S.bpm, div: S.div, aspect: S.aspect, custom: S.custom, res: S.res, outFit: S.outFit, mediaFit: S.mediaFit,
-      mediaMeta: S.mediaMeta, mpage: S.mpage,
-      padMode: S.padMode, limit: S.limit, lat: S.lat, xfade: S.xfade, gens: S.gens, gen: S.gen, genSlot: S.genSlot, stickers: S.stickers, stickerFx: S.stickerFx, text: S.text,
+      mode: S.mode, sound: S.sound, bpm: S.bpm, div: S.div, aspect: S.aspect, custom: S.custom, res: S.res, outFit: S.outFit, mediaFit: S.mediaFit,
+      mediaMeta: S.mediaMeta, mpage: S.mpage, padMode: S.padMode, limit: S.limit, lat: S.lat, text: S.text,
+      deck: { a: S.deck.a, b: S.deck.b, x: S.deck.x, blend: S.deck.blend, cut: S.deck.cut, autoTake: S.deck.autoTake, len: S.deck.len },
       fxp: Object.fromEntries(Object.entries(S.fx).map(([k, v]) => [k, v.p]))
     }));
   }, 400);
@@ -40,24 +33,20 @@ function save() {
 function load() {
   if (ROLE !== 'control') return;
   try {
-    const raw = lsGet(LS_KEY); if (!raw) return;
+    const raw = lsGet(LS_KEY) || lsGet('plv-state-v2'); if (!raw) return;
     const d = JSON.parse(raw);
-    ['mode', 'sound', 'bank', 'bpm', 'div', 'aspect', 'custom', 'res', 'outFit', 'mediaFit', 'padMode', 'limit', 'lat', 'xfade', 'genSlot', 'stickerFx'].forEach(k => { if (d[k] !== undefined && d[k] !== null) S[k] = d[k]; });
-    if (Array.isArray(d.gens)) S.gens = DEFAULT_GENS.map((def, i) => (d.gens[i] && d.gens[i].g && d.gens[i].name) ? d.gens[i] : JSON.parse(JSON.stringify(def)));
-    if (d.gen && d.gen.shape) S.gen = { ...S.gen, ...d.gen };
-    if (Array.isArray(d.stickers)) S.stickers = d.stickers.filter(s => s && s.kind);
-    if (d.text) Object.assign(S.text, d.text, { on: false });
+    ['mode', 'sound', 'bpm', 'div', 'aspect', 'custom', 'res', 'outFit', 'mediaFit', 'padMode', 'limit', 'lat', 'mpage'].forEach(k => { if (d[k] !== undefined && d[k] !== null) S[k] = d[k]; });
     if (d.mediaMeta && typeof d.mediaMeta === 'object') S.mediaMeta = d.mediaMeta;
-    if (typeof d.mpage === 'number') S.mpage = d.mpage;
-    if (!['fx', 'scene', 'media'].includes(S.bank)) S.bank = 'fx';
+    if (d.deck && typeof d.deck === 'object') Object.assign(S.deck, d.deck);
+    if (!BLEND_OP[S.deck.blend]) S.deck.blend = 'normal';
+    if (d.text) Object.assign(S.text, d.text, { on: false });
     if (d.fxp) Object.entries(d.fxp).forEach(([k, p]) => { if (S.fx[k]) Object.assign(S.fx[k].p, p); });
     if (!ASPECTS[S.aspect] && S.aspect !== 'custom' && S.aspect !== 'screen') S.aspect = '16:9';
-    S.stickers.forEach(s => { sid = Math.max(sid, (s.id | 0) + 1); });
   } catch (e) { console.warn('Bỏ qua dữ liệu lưu hỏng', e); }
 }
 load();
 
-/* IndexedDB for media and custom stickers */
+/* IndexedDB: media đã up và thư mục media */
 let dbP = null;
 function idb() {
   if (!dbP) dbP = new Promise((res, rej) => {

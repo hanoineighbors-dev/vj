@@ -5,7 +5,10 @@ let stIdx = -1;
 const fxWas = {};
 function pass(fn) {
   const c = alt.ctx; c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.imageSmoothingEnabled = true;
-  c.clearRect(0, 0, W, H); fn(c, cur.cv); const t = cur; cur = alt; alt = t;
+  c.clearRect(0, 0, W, H); fn(c, cur.cv);
+  /* trả context về trạng thái gốc, nếu không chữ vẽ sau sẽ bị lệch theo phép phóng/xoay của effect */
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.imageSmoothingEnabled = true;
+  const t = cur; cur = alt; alt = t;
 }
 const kickOf = (b, cyc, pow = 3) => Math.pow(1 - fr(b / cyc), pow);
 const FXI = {
@@ -153,36 +156,16 @@ function drawGuides(ctx) {
 }
 
 /* ---------- render ---------- */
-let baseSig = '', xfStart = -1e9;
-const XF_MS = 600;
-function baseSignature() {
-  const g = S.gen;
-  if (S.source === 'media') { const m = S.media[S.mediaSel]; return 'm:' + (m ? m.id : ''); }
-  return 'g:' + g.shape + g.motion + g.multi + g.pal;
-}
-function drawBase(ctx, b, t) {
-  if (S.source === 'media') { const m = S.media[S.mediaSel]; if (m && drawMedia(ctx, m)) return; }
-  drawGen(ctx, S.gen, b, t);
-}
+function resetCtx(c) { c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.shadowColor = 'transparent'; c.shadowBlur = 0; c.imageSmoothingEnabled = true; }
 function render(now, dt) {
+  mixerStep();
   if (S.freeze) return;
   const b = S.beats + S.lat * S.bpm / 60000;
-  if (S.source === 'media') { const m = S.media[S.mediaSel]; if (m) videoStep(m, dt); }
-  const sig = baseSignature();
-  if (sig !== baseSig) {
-    if (baseSig && S.xfade) { XF.ctx.globalAlpha = 1; XF.ctx.clearRect(0, 0, W, H); XF.ctx.drawImage(BASE.cv, 0, 0); xfStart = now; }
-    baseSig = sig;
-  }
-  const bc = BASE.ctx; bc.setTransform(1, 0, 0, 1, 0, 0); bc.globalAlpha = 1; bc.globalCompositeOperation = 'source-over'; bc.shadowColor = 'transparent';
-  drawBase(bc, b, now);
-  const c0 = cur.ctx; c0.setTransform(1, 0, 0, 1, 0, 0); c0.globalAlpha = 1; c0.globalCompositeOperation = 'source-over'; c0.shadowColor = 'transparent';
-  c0.drawImage(BASE.cv, 0, 0);
-  const xk = (now - xfStart) / XF_MS;
-  if (xk < 1) { c0.globalAlpha = 1 - xk; c0.drawImage(XF.cv, 0, 0); c0.globalAlpha = 1; }
-  if (S.stickerFx) drawStickers(cur.ctx, b);
+  drawDecks(cur.ctx, b, dt, now);
   runFx(b, now);
-  if (!S.stickerFx) drawStickers(cur.ctx, b);
+  resetCtx(cur.ctx);
   drawText(cur.ctx, b);
+  resetCtx(cur.ctx);
   if (S.guides) drawGuides(cur.ctx);
   if (S.dim < 1) { cur.ctx.globalAlpha = 1 - S.dim; cur.ctx.fillStyle = '#000'; cur.ctx.fillRect(0, 0, W, H); cur.ctx.globalAlpha = 1; }
   if (S.black) { cur.ctx.fillStyle = '#000'; cur.ctx.fillRect(0, 0, W, H); }
