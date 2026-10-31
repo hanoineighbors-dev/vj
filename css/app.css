@@ -222,7 +222,7 @@ body{padding-block:12px 20px}
 .brand h1{font-size:clamp(20px,2.2vw,26px)}
 .brand p{display:none}
 .main{display:grid;gap:14px;grid-template-columns:minmax(0,1fr);align-items:start}
-@media (min-width:1100px){
+@media (min-width:900px){
   .main{grid-template-columns:minmax(0,.92fr) minmax(0,1.18fr) minmax(0,.95fr);height:calc(100vh - 86px);min-height:640px}
   .col{height:100%;overflow:auto;scrollbar-width:thin}
 }
@@ -318,7 +318,7 @@ body{padding-block:12px 20px}
 select{border:1.5px solid var(--line);background:var(--field);border-radius:12px;padding:7px 10px;font:800 13px/1 var(--f-display)}
 
 /* thanh nhịp trên đầu */
-@media (min-width:1100px){
+@media (min-width:900px){
   .app{display:flex;flex-direction:column;height:calc(100vh - 32px);min-height:680px}
   .main{flex:1;min-height:0;height:auto}
 }
@@ -331,3 +331,35 @@ select{border:1.5px solid var(--line);background:var(--field);border-radius:12px
 .badge{padding:7px 11px}
 .pad .n{font-size:clamp(10px,.82vw,12.5px);overflow-wrap:normal;word-break:normal;hyphens:manual}
 .mic-text{font-size:12px;color:var(--ink-soft)}
+
+/* màn hẹp hơn (cửa sổ không phóng to hết, MacBook 13 inch thu nhỏ) */
+@media (min-width:900px) and (max-width:1279px){
+  body{padding-inline:12px}
+  .main{gap:10px;grid-template-columns:minmax(0,.9fr) minmax(0,1.15fr) minmax(0,.95fr)}
+  .panel{padding:10px;border-radius:18px}
+  .mgrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .pad-grid{gap:6px}
+  .pad{border-radius:14px}
+  .pad .k{font-size:13px;top:4px;left:7px}
+  .pad .n{font-size:10px}
+  .decks{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr);gap:6px}
+  .take{font-size:13px;padding:8px 10px}
+  .chips.sm .chip{padding:4px 7px;font-size:11px}
+  .lbl{font-size:10.5px}
+  .beatbar{border-radius:20px}
+  .brand h1{font-size:18px}
+  .knob-wrap{width:62px}.knob{width:46px;height:46px}
+  .master{gap:8px}.drop{padding:8px 16px;font-size:14px}
+  .hint{display:none}
+}
+/* dưới 900px: một cột, thứ tự Xem và trộn, Effect, Media */
+@media (max-width:899px){
+  .main > .col:nth-child(2){order:1}
+  .main > .col:nth-child(3){order:2}
+  .main > .col:nth-child(1){order:3}
+}
+
+.xflbl{justify-content:center;text-align:center}
+@media (max-height:900px){.hint{display:none}}
+@media (min-width:900px) and (max-width:1399px){.brand h1{display:none}.top{flex-wrap:nowrap}.top-actions{flex-wrap:nowrap}.badge span{white-space:nowrap}}
+@media (min-width:900px) and (max-width:1150px){.beatbar .nudge,.beatbar #btnX2,.beatbar #btnHalf{display:none}}
